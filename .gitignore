@@ -1,0 +1,29 @@
+# Android
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+android/local.properties
+android/.gradle/
+android/build/
+android/app/build/
+android/.idea/
+
+# Video files (too large for git)
+*.mp4
+*.avi
+*.mov
+*.mkv
+短剧/
+
+# Node
+video-server/node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
