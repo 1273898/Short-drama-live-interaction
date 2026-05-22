@@ -21,8 +21,19 @@ class PlayerViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
     )
     val currentEpisode: StateFlow<Episode?> = _currentEpisode.asStateFlow()
 
+    // Store playback position for each episode
+    private val playbackPositions = mutableMapOf<Int, Long>()
+
     fun selectEpisode(episode: Episode) {
         _currentEpisode.value = episode
+    }
+
+    fun savePosition(episodeId: Int, position: Long) {
+        playbackPositions[episodeId] = position
+    }
+
+    fun getPosition(episodeId: Int): Long {
+        return playbackPositions[episodeId] ?: 0L
     }
 
     fun nextEpisode() {

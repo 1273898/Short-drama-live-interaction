@@ -86,23 +86,17 @@ fun PlayerScreen(
             beyondBoundsPageCount = 1  // Pre-load adjacent pages
         ) { page ->
             val episode = episodes[page]
+            val isActive = pagerState.settledPage == page
             EpisodePage(
                 episode = episode,
                 dramaTitle = drama.title,
                 episodeIndex = page,
                 totalEpisodes = episodes.size,
+                isActive = isActive,
+                startPosition = viewModel.getPosition(episode.id),
+                onPositionChanged = { position -> viewModel.savePosition(episode.id, position) },
                 onBack = onBack,
-                onOpenEpisodes = { showEpisodePanel = true },
-                onPrevious = {
-                    if (page > 0) {
-                        // Pager will handle the scroll
-                    }
-                },
-                onNext = {
-                    if (page < episodes.size - 1) {
-                        // Pager will handle the scroll
-                    }
-                }
+                onOpenEpisodes = { showEpisodePanel = true }
             )
         }
 
@@ -154,10 +148,11 @@ private fun EpisodePage(
     dramaTitle: String,
     episodeIndex: Int,
     totalEpisodes: Int,
+    isActive: Boolean,
+    startPosition: Long,
+    onPositionChanged: (Long) -> Unit,
     onBack: () -> Unit,
-    onOpenEpisodes: () -> Unit,
-    onPrevious: () -> Unit,
-    onNext: () -> Unit
+    onOpenEpisodes: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -170,10 +165,13 @@ private fun EpisodePage(
                 }
             }
     ) {
-        // Video player - full screen
+        // Video player - full screen, only active page plays
         VideoPlayer(
             videoPath = episode.videoPath,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            isActive = isActive,
+            startPosition = startPosition,
+            onPositionChanged = onPositionChanged
         )
 
         // Top bar overlay

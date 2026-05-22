@@ -4,16 +4,22 @@ import android.net.Uri
 import android.view.GestureDetector
 import android.view.MotionEvent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -36,10 +42,15 @@ import java.io.File
 @Composable
 fun VideoPlayer(
     videoPath: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isActive: Boolean = true,
+    startPosition: Long = 0L,
+    onPositionChanged: (Long) -> Unit = {}
 ) {
     val context = LocalContext.current
-    var showPauseIcon by remember { mutableStateOf(false) }
+    var isPaused by remember { mutableStateOf(false) }
+    var currentPosition by remember { mutableLongStateOf(startPosition) }
+    var duration by remember { mutableLongStateOf(0L) }
     var seekIndicator by remember { mutableStateOf("") }
     var isSpeedUp by remember { mutableStateOf(false) }
 
@@ -53,17 +64,36 @@ fun VideoPlayer(
             setMediaItem(mediaItem)
             repeatMode = Player.REPEAT_MODE_ALL
             prepare()
-            playWhenReady = true
+            seekTo(startPosition)
+            playWhenReady = false
         }
     }
 
-    // Auto-hide indicators
-    LaunchedEffect(showPauseIcon) {
-        if (showPauseIcon) {
-            delay(600)
-            showPauseIcon = false
+    // Update position periodically
+    LaunchedEffect(exoPlayer, isActive) {
+        while (isActive) {
+            if (exoPlayer.isPlaying) {
+                currentPosition = exoPlayer.currentPosition
+                duration = exoPlayer.duration.coerceAtLeast(0)
+                onPositionChanged(currentPosition)
+            }
+            delay(500)
         }
     }
+
+    // Control playback based on active state
+    LaunchedEffect(isActive) {
+        if (isActive) {
+            exoPlayer.playWhenReady = true
+            exoPlayer.play()
+            isPaused = false
+        } else {
+            exoPlayer.pause()
+            onPositionChanged(exoPlayer.currentPosition)
+        }
+    }
+
+    // Auto-hide seek indicator
     LaunchedEffect(seekIndicator) {
         if (seekIndicator.isNotEmpty()) {
             delay(600)
@@ -73,6 +103,7 @@ fun VideoPlayer(
 
     DisposableEffect(Unit) {
         onDispose {
+            onPositionChanged(exoPlayer.currentPosition)
             exoPlayer.release()
         }
     }
@@ -88,10 +119,12 @@ fun VideoPlayer(
                         override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
                             if (exoPlayer.isPlaying) {
                                 exoPlayer.pause()
-                                showPauseIcon = true
+                                isPaused = true
+                                currentPosition = exoPlayer.currentPosition
+                                onPositionChanged(currentPosition)
                             } else {
                                 exoPlayer.play()
-                                showPauseIcon = false
+                                isPaused = false
                             }
                             return true
                         }
@@ -129,16 +162,6 @@ fun VideoPlayer(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Pause icon overlay
-        if (showPauseIcon) {
-            Text(
-                text = "⏸",
-                fontSize = 64.sp,
-                color = Color.White.copy(alpha = 0.8f),
-                modifier = Modifier.align(Alignment.Center)
-            )
-        }
-
         // Seek indicator
         if (seekIndicator.isNotEmpty()) {
             Text(
@@ -167,5 +190,56 @@ fun VideoPlayer(
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             )
         }
+
+        // Progress bar at bottom (visible when paused)
+        if (isPaused && duration > 0) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .background(Color.Black.copy(alpha = 0.7f))
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Slider(
+                    value = currentPosition.toFloat(),
+                    onValueChange = { newValue ->
+                        currentPosition = newValue.toLong()
+                        exoPlayer.seekTo(currentPosition)
+                    },
+                    onValueChangeFinished = {
+                        onPositionChanged(currentPosition)
+                    },
+                    valueRange = 0f..duration.toFloat(),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color.White,
+                        activeTrackColor = Color(0xFFFF6B6B),
+                        inactiveTrackColor = Color.White.copy(alpha = 0.3f)
+                    )
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = formatTime(currentPosition),
+                        color = Color.White,
+                        fontSize = 12.sp
+                    )
+                    Text(
+                        text = formatTime(duration),
+                        color = Color.White,
+                        fontSize = 12.sp
+                    )
+                }
+            }
+        }
     }
+}
+
+private fun formatTime(ms: Long): String {
+    val totalSeconds = ms / 1000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return "%d:%02d".format(minutes, seconds)
 }
