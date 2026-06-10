@@ -21,6 +21,7 @@
 # ============================================
 local.properties
 highlight-server/.env
+branch-service/.env
 
 # ============================================
 # 测试代码
@@ -49,6 +50,8 @@ highlight-server/__pycache__/
 
 # Vosk 语音识别模型（~50MB）
 highlight-server/models/
+highlight-server/vosk-model-small-cn-0.22/
+highlight-server/vosk-model-small-cn-0.22.zip
 
 # FFmpeg 二进制（35MB）
 highlight-server/ffmpeg/
