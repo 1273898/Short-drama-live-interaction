@@ -85,6 +85,9 @@ interface HighlightDao {
 
     @Query("DELETE FROM highlights WHERE cachedAt < :expireTime")
     suspend fun deleteExpired(expireTime: Long)
+
+    @Query("DELETE FROM highlights")
+    suspend fun deleteAll()
 }
 
 @Entity(tableName = "roast_cache", indices = [Index("highlightKey")])
@@ -305,6 +308,13 @@ class HighlightRepository(private val context: Context) {
 
     fun clearAiCache() {
         aiRoastService.clearCache()
+    }
+
+    suspend fun clearHighlightCache() {
+        withContext(Dispatchers.IO) {
+            dao.deleteAll()
+            Log.d("HighlightRepo", "已清除所有高亮缓存")
+        }
     }
 
     suspend fun getHighlights(videoId: String): List<ServerHighlightPoint> = withContext(Dispatchers.IO) {

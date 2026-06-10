@@ -42,11 +42,13 @@ fun AppNavigation() {
             val context = LocalContext.current
             val dramaId = backStackEntry.arguments?.getInt("dramaId") ?: 1
             val episodeId = backStackEntry.arguments?.getInt("episodeId") ?: 0
+            val branchRepository = remember { com.shortdrama.interaction.data.repository.BranchRepository(context.applicationContext) }
             val playerViewModel: PlayerViewModel = viewModel(
                 factory = PlayerViewModel.Factory(
                     context.applicationContext as Application,
                     dramaId,
-                    episodeId
+                    episodeId,
+                    branchRepository
                 )
             )
             Log.d("Perf", "[Perf] Nav composable entry: ${System.currentTimeMillis() - entryStart}ms")

@@ -47,7 +47,7 @@ async def _warmup_videos(video_ids: list):
             logger.warning(f"Warmup failed for {video_id}: {e}")
 
 
-CACHE_VERSION = 4
+CACHE_VERSION = 6
 
 
 async def get_video_duration(video_path: str) -> Optional[float]:
@@ -248,7 +248,7 @@ _VIDEO_EXTENSIONS = (".mp4", ".avi", ".mkv", ".mov")
 
 def find_video_path(video_id: str) -> Optional[str]:
     """扫描 短剧/ 目录查找匹配的视频文件，支持多种扩展名"""
-    base_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "短剧")
+    base_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "短剧")
     if not os.path.isdir(base_dir):
         logger.warning(f"短剧目录不存在: {base_dir}")
         return None
@@ -387,7 +387,7 @@ async def get_highlights(video_id: str):
             cache.record_degradation(1)
 
         # ===== 获取视频时长（用于间隔过滤） =====
-        video_duration = get_video_duration(video_path)
+        video_duration = await get_video_duration(video_path)
         if video_duration:
             logger.info(f"视频时长: {video_duration:.1f}s")
 
@@ -650,7 +650,7 @@ async def health_check():
 
 
 # 挂载视频静态文件目录（与 video-server 功能合并）
-VIDEO_ROOT = os.path.join(os.path.dirname(__file__), "..", "短剧")
+VIDEO_ROOT = os.path.join(os.path.dirname(__file__), "..", "..", "短剧")
 if os.path.isdir(VIDEO_ROOT):
     from fastapi.responses import FileResponse
 

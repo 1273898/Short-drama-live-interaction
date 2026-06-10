@@ -385,6 +385,14 @@ class HighlightViewModel(
 
     // ===== Public API =====
 
+    fun clearCacheAndReload(videoId: String) {
+        highlightCache.clear()
+        viewModelScope.launch {
+            repository.clearHighlightCache()
+            loadHighlights(videoId)
+        }
+    }
+
     fun loadHighlights(videoId: String) {
         // 切集时立即清除旧状态，防止旧高光数据残留导致误触发
         triggeredSet.clear()

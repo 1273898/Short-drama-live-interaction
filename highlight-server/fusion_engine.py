@@ -170,7 +170,7 @@ def deduplicate_highlights(highlights: List[Dict], window_size: float = 30.0) ->
 def fuse_highlights(
     rule_highlights: List[Dict],
     ai_highlights: List[Dict],
-    max_highlights: int = 2,
+    max_highlights: int = 5,
     video_duration: Optional[float] = None
 ) -> List[Dict]:
     """融合两个引擎的结果，输出最终高光点列表（最多max_highlights个）

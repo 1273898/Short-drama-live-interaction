@@ -86,6 +86,8 @@ import com.shortdrama.interaction.ui.component.HighlightSnackbar
 import com.shortdrama.interaction.ui.component.SpriteFeedbackBar
 import com.shortdrama.interaction.ui.component.SpriteOverlay
 import com.shortdrama.interaction.ui.component.VideoPlayer
+import com.shortdrama.interaction.ui.component.BranchOverlay
+import com.shortdrama.interaction.ui.component.SubmitBranchDialogContent
 import com.shortdrama.interaction.viewmodel.HighlightViewModel
 import com.shortdrama.interaction.viewmodel.PlayerViewModel
 import java.io.File
@@ -110,6 +112,23 @@ fun PlayerScreen(
     val highlightState by highlightViewModel.state.collectAsState()
     var showEpisodePanel by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // 分支相关状态
+    val showBranchOverlay by viewModel.showBranchOverlay.collectAsState()
+    val branches by viewModel.branches.collectAsState()
+    val branchesLoading by viewModel.branchesLoading.collectAsState()
+    val isBranchGenerating by viewModel.isGenerating.collectAsState()
+    val showSubmitDialog by viewModel.showSubmitDialog.collectAsState()
+    val submitResult by viewModel.submitResult.collectAsState()
+    val isSubmitting by viewModel.isSubmitting.collectAsState()
+
+    // 显示提交结果 Toast
+    LaunchedEffect(submitResult) {
+        submitResult?.let {
+            android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_SHORT).show()
+            viewModel.clearSubmitResult()
+        }
+    }
 
     // Single shared ExoPlayer instance — prevents per-page player creation that causes black screen
     val exoPlayer = remember {
@@ -163,6 +182,16 @@ fun PlayerScreen(
 
                 addAudioAnalyticsListener(this@apply)
             }
+    }
+
+    // 分支弹窗出现时暂停视频
+    LaunchedEffect(showBranchOverlay, showSubmitDialog) {
+        if (showBranchOverlay || showSubmitDialog) {
+            exoPlayer.playWhenReady = false
+        } else {
+            exoPlayer.playWhenReady = true
+            exoPlayer.play()
+        }
     }
 
     // Initialize TTS (async, non-blocking)
@@ -219,14 +248,14 @@ fun PlayerScreen(
             Log.d("PlayerScreen", "加载高光: episode=${episode.title}, id=${episode.id}")
             drama?.let { highlightViewModel.setDramaInfo(it.title, it.description) }
             highlightViewModel.setCurrentEpisode(episode.title, episode.id)
-            highlightViewModel.loadHighlights(episode.title)
+            highlightViewModel.clearCacheAndReload(episode.title)
 
             // 重试机制：3s 后检查是否加载成功，未成功则重试一次
             delay(3000)
             val segments = highlightViewModel.state.value.highlightSegments
             if (segments.isEmpty()) {
                 Log.w("PlayerScreen", "高光加载 3s 后仍为空，重试: episode=${episode.title}")
-                highlightViewModel.loadHighlights(episode.title)
+                highlightViewModel.clearCacheAndReload(episode.title)
             }
         }
     }
@@ -241,19 +270,14 @@ fun PlayerScreen(
     val pagerState = rememberPagerState(initialPage = initialPage) { episodes.size }
     val coroutineScope = rememberCoroutineScope()
 
-    // 自动下一集：监听 STATE_ENDED，播完自动跳转
+    // 自动下一集：监听 STATE_ENDED，播完先弹分支选择
     DisposableEffect(exoPlayer) {
         val listener = object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_ENDED) {
-                    val ep = currentEpisode ?: return
-                    val idx = episodes.indexOfFirst { it.id == ep.id }
-                    if (idx < 0 || idx >= episodes.size - 1) return
-                    val next = episodes[idx + 1]
-                    viewModel.selectEpisode(next)
-                    coroutineScope.launch {
-                        pagerState.animateScrollToPage(idx + 1)
-                    }
+                    // 先触发分支选择
+                    viewModel.onEpisodeCompleted()
+                    // 不自动跳下一集，等用户关闭分支弹窗后由用户手动操作
                 }
             }
         }
@@ -546,6 +570,39 @@ fun PlayerScreen(
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 32.dp)
         )
+    }
+
+    // === 分支选择底部弹窗 ===
+    if (showBranchOverlay) {
+        BranchOverlay(
+            branches = branches,
+            isLoading = branchesLoading,
+            isGenerating = isBranchGenerating,
+            baseUrl = "http://10.0.2.2:8081",
+            onVote = { branchId -> viewModel.voteBranch(branchId) },
+            onSubmitBranch = { viewModel.showSubmitDialog() },
+            onDismiss = { viewModel.dismissBranchOverlay() }
+        )
+    }
+
+    // === 用户提交分支对话框 ===
+    if (showSubmitDialog) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = { viewModel.dismissSubmitDialog() }) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color(0xFF1E1E2E))
+            ) {
+                SubmitBranchDialogContent(
+                    isSubmitting = isSubmitting,
+                    rejectionReason = submitResult,
+                    onSubmit = { title, description, tone, preview ->
+                        viewModel.submitBranch(title, description, tone, preview)
+                    }
+                )
+            }
+        }
     }
 }
 
