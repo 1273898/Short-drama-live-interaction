@@ -70,8 +70,11 @@ highlight-server/benchmark_test.py
 highlight-server/final_test.py
 highlight-server/generate_batch_cache.py
 highlight-server/download_models.py
+highlight-server/download_model.py
 highlight-server/regen_comments.py
 highlight-server/quick_test.py
+highlight-server/export_jit_to_onnx*.py
+highlight-server/vad_compare_test.py
 
 # 测试报告和日志
 highlight-server/*_report.json
