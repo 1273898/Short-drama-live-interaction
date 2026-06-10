@@ -1,0 +1,140 @@
+# ============================================
+# Android 项目
+# ============================================
+
+# 构建产物
+*.iml
+.gradle/
+/local.properties
+/.idea/
+/build/
+/app/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+
+# Room schema 导出
+/app/schemas/
+
+# ============================================
+# 敏感文件（API Key / 环境变量）
+# ============================================
+local.properties
+highlight-server/.env
+
+# ============================================
+# 测试代码
+# ============================================
+app/src/test/
+app/src/androidTest/
+
+# ============================================
+# 资源文件（精灵图片等）
+# ============================================
+app/src/main/res/drawable/sprite_*.png
+小精灵/
+
+# ============================================
+# 根目录缓存文件
+# ============================================
+cache/
+
+# ============================================
+# 后端服务 (highlight-server)
+# ============================================
+
+# Python 字节码
+highlight-server/__pycache__/
+*.pyc
+*.pyo
+
+# Vosk 语音识别模型（~50MB）
+highlight-server/models/
+
+# FFmpeg 二进制（35MB）
+highlight-server/ffmpeg/
+
+# 缓存数据
+highlight-server/cache/
+
+# 批量计算结果
+highlight-server/batch_result.json
+highlight-server/test_batch.json
+
+# 测试脚本和内部工具
+highlight-server/test_*.py
+highlight-server/_*.py
+highlight-server/batch_*.py
+highlight-server/degradation_test.py
+highlight-server/benchmark_test.py
+highlight-server/final_test.py
+highlight-server/generate_batch_cache.py
+highlight-server/download_models.py
+highlight-server/regen_comments.py
+highlight-server/quick_test.py
+
+# 测试报告和日志
+highlight-server/*_report.json
+highlight-server/*_log.txt
+highlight-server/*_err*.txt
+highlight-server/startup_*.txt
+highlight-server/server*.log
+highlight-server/server*.txt
+
+# 部署文档
+highlight-server/*.md
+
+# pytest 和 torch 缓存
+highlight-server/.pytest_cache/
+highlight-server/.torch_cache/
+.pytest_cache/
+
+# TTS 缓存
+highlight-server/tts_cache/
+
+# 调试音频文件
+highlight-server/debug_*.mp3
+highlight-server/debug_*.wav
+
+# 批量结果文件
+highlight-server/batch_result*.json
+highlight-server/_test_*.json
+highlight-server/_quality_*.json
+highlight-server/_quality_*.txt
+
+# 部署和运维脚本
+highlight-server/*.sh
+highlight-server/*.bat
+highlight-server/*.yml
+
+# 根目录文件
+batch_result*.json
+screen.png
+highlight-server/batch_run_output.txt
+
+# ============================================
+# 视频文件（体积过大）
+# ============================================
+*.mp4
+*.avi
+*.mov
+*.mkv
+短剧/
+
+# ============================================
+# 文档文件（含敏感信息或非核心）
+# ============================================
+运行项目步骤.txt
+highlight-server/手动验证步骤.txt
+highlight-server/requirements.txt
+
+# ============================================
+# OS 文件
+# ============================================
+.DS_Store
+Thumbs.db
+
+# ============================================
+# Claude Code 本地配置
+# ============================================
+.claude/
